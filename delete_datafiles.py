@@ -5,6 +5,7 @@ import requests #use requests directly or use python-icat?
 import sys
 import logging
 import argparse
+import getpass
 
 # create global vars: host, session
 
@@ -74,6 +75,7 @@ def main():
     # set up logging - from commandline option
     logging.setLevel(logging[args.log_leve])
     # ask user for password
+    password = getpass.getpass("Enter password for %s/%s: " % (args.mechanism, args.user))
     # try opening file of locations
     # try creating a session - how long will the session last?
     # call process_location_file
