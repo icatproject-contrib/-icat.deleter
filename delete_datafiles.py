@@ -73,7 +73,7 @@ def main():
                             dest="log_level")
     args = arg_parser.parse_args()
     # set up logging - from commandline option
-    logging.setLevel(logging[args.log_leve])
+    logging.setLevel(logging[args.log_level])
     # ask user for password
     password = getpass.getpass("Enter password for %s/%s: " % (args.mechanism, args.user))
     # try opening file of locations
