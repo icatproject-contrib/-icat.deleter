@@ -9,19 +9,28 @@ import getpass
 
 # create global vars: host, session
 
-def get_session(auth_mechanism, username, password):
+def get_session(auth_mechanism, username, password, host):
     """Takes a username, password and authentication mechanism, logs into ICAT and returns a session ID"""
-    pass
+    # The ICAT Rest API does not accept json in the body of the HTTP request. Instead
+    # it takes the form parameter 'json' with a string value - which is the json-encoded
+    # data - eurrgh! The json-encoded data is sensitive to order so we cannot pass a Python
+    # dictionary to the requests.post call as Python dictionaries do not preserve order - eurrgh!
+    # So we construct a string with the json data in the correct order - an OrderedDict may
+    # work here - untested. (Also, dictionaries preserve order in Python 3.something)
+    form_data = {'json': '{"plugin": "' + auth_mechanism + '", "credentials":[{"username":"' + username + '"}, {"password":"' + password + '"}]}'}
+    session_url = host + "/icat/session"
+    response = requests.post(session_url, data=form_data)
+    return response.json()['sessionId']
 
-def get_datafile_id(location):
+def get_datafile_id(location, host, session):
     """Takes a file path location as a string and returns the corresponding DataFile ID from ICAT"""
     pass
 
-def delete_datafiles(datafiles):
+def delete_datafiles(datafiles, host, session):
     """Takes a list of DataFile IDs and deletes them from ICAT"""
     pass
 
-def process_location_file(location_file):
+def process_location_file(location_file, host, session):
     """Takes an open file of Datafile locations, iterates over them, getting the ID of each then deleting them in batches"""
     # Maybe make some lookups into local vars for speed?
     # Use itertools to get an iterator over batch-size (200?) lines from the locations file
@@ -73,12 +82,16 @@ def main():
                             dest="log_level")
     args = arg_parser.parse_args()
     # set up logging - from commandline option
-    logging.setLevel(logging[args.log_level])
+    logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=getattr(logging, args.log_level.upper()))
     # ask user for password
     password = getpass.getpass("Enter password for %s/%s: " % (args.mechanism, args.user))
     # try opening file of locations
+    locations_file = open(args.locations_file, 'r')
     # try creating a session - how long will the session last?
+    session = get_session(args.mechanism, args.user, password, args.icat_host)
+    print session
     # call process_location_file
+    process_location_file(locations_file, args.icat_host, session)
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
