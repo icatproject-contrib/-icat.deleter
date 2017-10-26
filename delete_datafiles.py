@@ -30,20 +30,23 @@ def get_session(auth_mechanism, username, password, host):
     if response.ok:
         return response.json()['sessionId']
     else:
-        message = "Failed to get a session ID. Exiting.\n"
-        message += "URL: %s\n" % str(response.url)
-        message += "Status Code: %s\n" % str(response.status_code)
-        message += "Response: %s\n" % response.text if response.text else 'Empty'
-        raise RuntimeError(message)
+        logging.critical("Failed to get a session ID. Exiting.")
+        logging.debug("URL: %s", str(response.url))
+        logging.debug("Status Code: %s", str(response.status_code))
+        logging.debug("Response: %s", response.text if response.text else 'Empty')
+        raise RuntimeError()
 
 def get_datafile_id(location, host, session):
     """Takes a file path location as a string and returns the corresponding
     DataFile ID from ICAT"""
 
+    logging.info("Attempting to get Datafile ID for %s", location)
+
     jpql_query = "SELECT df.id FROM Datafile df WHERE df.location = '%s'" % location
     jpql_url = host + "/icat/entityManager/"
     query_data = (('sessionId', session), ('query', jpql_query))
 
+    # TODO Test for expired session. If expired, get new session and try again
     response = requests.get(jpql_url, params=query_data)
 
     # If there are no results, ICAT still returns 200 OK and an empty response
@@ -51,18 +54,17 @@ def get_datafile_id(location, host, session):
     try:
         return response.json()[0]
     except IndexError as e:
-        message = "Failed to get Datafile ID for: %s. Skipping.\n" % location
-        message += "URL: %s\n" % str(response.url)
-        message += "Status Code: %s\n" % str(response.status_code)
-        message += "Response: %s\n" % response.text if response.text else 'Empty'
-        message += "Json: %s\n" % response.json() if response.json() else 'Empty'
-        logging.warning(message)
+        logging.warning("Failed to get Datafile ID for: %s. Skipping.", location)
+        logging.debug("URL: %s", str(response.url))
+        logging.debug("Status Code: %s", str(response.status_code))
+        logging.debug("Response: %s", response.text if response.text else 'Empty')
+        logging.debug("Json: %s", response.json() if response.json() else 'Empty')
         return None
 
 def delete_datafiles(datafiles, host, session):
     """Takes a list of DataFile IDs and deletes them from ICAT"""
 
-    print "%d datafiles" % len(datafiles)
+    logging.info("Attempting to delete datafile ids: %s", str(datafiles))
 
     # Construct a delete query string of the form:
     # '[ {"Datafile": {"id": 9933}}, {"Datafile": {"id": 3316}} ]'
@@ -73,18 +75,18 @@ def delete_datafiles(datafiles, host, session):
     datafiles_as_json_list = ''.join(('[ ', datafiles_with_commas, ' ]'))
     delete_url = host + "/icat/entityManager/"
 
+    # TODO Test for expired session. If expired, get new session and try again
     response = requests.delete(delete_url, params= (('sessionId', session),
         ('entities', datafiles_as_json_list)))
 
     if response.ok:
         return
     else:
-        message = "Failed to delete datafiles: %s. Skipping.\n" % str(datafiles)
-        message += "URL: %s\n" % str(response.url)
-        message += "Status Code: %s\n" % str(response.status_code)
-        message += "Response: %s\n" % response.text if response.text else 'Empty'
-        message += "Json: %s\n" % response.json() if response.json() else 'Empty'
-        print message
+        logging.warning("Failed to delete datafiles: %s. Skipping.", str(datafiles))
+        logging.debug("URL: %s", str(response.url))
+        logging.debug("Status Code: %s", str(response.status_code))
+        logging.debug("Response: %s", response.text if response.text else 'Empty')
+        logging.debug("Json: %s", response.json() if response.json() else 'Empty')
         return
 
 #async def?
@@ -106,6 +108,7 @@ def process_locations_file(locations_file, batch_size, host, session):
         # the locations file with whitespace stripped off the beginning and end
         batch = [l.strip() for l in itertools.islice(locations, batch_size)]
         if len(batch) == 0: #ie. nothing returned from locations file
+            logging.debug("Got to end of locations file - returned zero-length batch")
             break
 
         deletes = list()
@@ -171,6 +174,7 @@ def main():
 
     # ask user for password
     password = getpass.getpass("Enter password for %s/%s: " % (args.mechanism, args.user))
+    logging.info("Got password for user %s/%s", args.mechanism, args.user)
 
     # try opening file of locations
     locations_file = open(args.locations_file, 'r')
@@ -181,7 +185,13 @@ def main():
     logging.info("Got session ID: %s", session)
 
     # call process_location_file
+    logging.info("Processing locations file")
+    logging.debug("Batch size is %s", str(args.batch_size))
+    logging.debug("Host is %s", args.icat_host)
+    logging.debug("Session is %s", session)
     process_locations_file(locations_file, args.batch_size, args.icat_host, session)
+
+    locations_file.close()
 
 if __name__ == "__main__":
     main()
