@@ -111,6 +111,7 @@ def delete_datafiles(datafiles, host, session, connection_pool, auth):
             ('entities', datafiles_as_json_list)))
 
         if response.ok:
+            logging.info("Deletion Successful\n")
             return
         else:
             # Response is not OK
