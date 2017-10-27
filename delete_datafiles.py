@@ -49,10 +49,10 @@ def get_datafile_id(location, host, session, connection_pool, auth):
 
     jpql_query = "SELECT df.id FROM Datafile df WHERE df.location = '%s'" % location
     jpql_url = host + "/icat/entityManager/"
-    query_data = (('sessionId', session), ('query', jpql_query))
 
     retries = 3
     while retries > 0:
+        query_data = (('sessionId', session), ('query', jpql_query))
         response = connection_pool.get(jpql_url, params=query_data)
 
         if response.ok:
