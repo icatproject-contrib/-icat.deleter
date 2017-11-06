@@ -10,6 +10,7 @@ import itertools
 import getpass
 
 def log_response(response):
+    """Log debugging information from a requests response object"""
     logging.debug("URL: %s", str(response.url))
     logging.debug("Status Code: %s", str(response.status_code))
     logging.debug("Response: %s", response.text if response.text else 'Empty')
@@ -143,13 +144,6 @@ def process_locations_file(locations_file, batch_size, host, session, auth):
     """Takes an open file of Datafile locations, iterates over them, getting the
     ID of each then deleting them in batches"""
 
-    # Maybe make some lookups into local vars for speed?
-    # Use itertools to get an iterator over batch-size (200?) lines from the locations file
-    # Maybe convert the iterator to a list (so file is read in chunks - may be
-    # faster than lots of small calls) and iterate over values (async for?)
-    # Get url and append ID to list (aiohttp?)
-    # After batch loop (async gather?), call delete(Many) url
-
     connection_pool = requests.Session()
     locations = iter(locations_file)
 
@@ -168,10 +162,6 @@ def process_locations_file(locations_file, batch_size, host, session, auth):
                     connection_pool, auth)
             if datafile_id is not None:
                 deletes.append(datafile_id)
-            # will this work OK in an async context? Maybe zip the batch
-            # iterator with an xrange of batch-size to create an index into a
-            # initialised list(deletes), then put the datafile_id into the
-            # correct position in the index
 
         if len(deletes) != 0:
             delete_datafiles(deletes, host, session, connection_pool, auth)
@@ -227,11 +217,11 @@ def main():
     password = getpass.getpass("Enter password for %s/%s: " % (args.mechanism, args.user))
     logging.info("Got password for user %s/%s", args.mechanism, args.user)
 
-    # try opening file of locations
+    # open file of locations
     locations_file = open(args.locations_file, 'r')
     logging.info("Opened locations file at: %s", args.locations_file)
 
-    # try creating a session - how long will the session last?
+    # create a session - how long will the session last?
     session = get_session(args.mechanism, args.user, password, args.icat_host)
     logging.info("Got session ID: %s", session)
 
