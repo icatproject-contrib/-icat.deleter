@@ -29,9 +29,7 @@ optional arguments:
                         The logging level
 ```
 
-## Build
-Use pex to create a compressed, executable file (zip) containing the python script and its dependencies. Only requires python to be installed on the target machine.
+~~## Build
+Use pex to create a compressed, executable file (zip) containing the python script and its dependencies. Only requires python to be installed on the target machine.~~
 
-```Shell
-pex . requests -c delete_datafiles.py -o delete_datafiles.pex -f dist
-```
+~~pex . requests -c delete_datafiles.py -o delete_datafiles.pex -f dist~~
