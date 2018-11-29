@@ -1,6 +1,6 @@
 # Datafile Deleter
 
-Takes a file containing one file path per line and delete the corresponding DataFile entities from ICAT
+Takes a file containing one file path per line and delete the corresponding DataFile entities from ICAT. Depends on the python 'requests' library.
 
 ## Usage
 ```
