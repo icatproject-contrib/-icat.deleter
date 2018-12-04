@@ -200,6 +200,7 @@ def main():
                             default=10,
                             help="The number of files to delete in a single call to ICAT",
                             metavar="<batch-size>",
+                            type=int,
                             dest="batch_size")
     arg_parser.add_argument('-l',
                             '--log-level',
